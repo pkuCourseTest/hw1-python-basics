@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "All tests",
+      "setup": "",
+      "run": "pytest tests/ -v",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 120,
+      "points": 100
+    }
+  ]
+}
