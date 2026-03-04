@@ -1,0 +1,69 @@
+name: Autograding
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pytest
+
+      - name: Run all tests and grade
+        run: |
+          python3 << 'SCRIPT'
+          import subprocess, re
+
+          # 一条命令跑完所有测试
+          result = subprocess.run(
+              ["pytest", "tests/", "-v", "--tb=short"],
+              capture_output=True, text=True
+          )
+
+          print(result.stdout)
+          if result.stderr:
+              print(result.stderr)
+
+          # 解析结果
+          # 匹配最后一行: "5 passed, 2 failed" 或 "15 passed"
+          summary = result.stdout.strip().split("\n")[-1]
+          
+          passed = 0
+          failed = 0
+          
+          m = re.search(r"(\d+) passed", summary)
+          if m:
+              passed = int(m.group(1))
+          m = re.search(r"(\d+) failed", summary)
+          if m:
+              failed = int(m.group(1))
+
+          total_tests = passed + failed
+          
+          if total_tests == 0:
+              score = 0
+          else:
+              score = round(passed / total_tests * 100)
+
+          print(f"\n{'='*50}")
+          print(f"  通过: {passed}/{total_tests}")
+          print(f"  得分: {score}/100")
+          print(f"{'='*50}")
+
+          # 不及格返回非0退出码
+          exit(0 if failed == 0 else 1)
+          SCRIPT
